@@ -52,8 +52,8 @@ The proposed MGSA approach for end-to-end ASR, where the alignment mapping infor
     cd egs/swbd/asr1
     rm -rf steps
     rm -rf utils
-    ln -s /home/$USER/espnet-dir/kaldi/egs/wsj/s5/steps .
-    ln -s /home/$USER/espnet-dir/kaldi/egs/wsj/s5/utils .
+    ln -s $KALDI_PATH/egs/wsj/s5/steps .
+    ln -s $KALDI_PATH/egs/wsj/s5/utils .
     ```
    
 
