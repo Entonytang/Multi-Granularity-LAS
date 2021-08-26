@@ -61,11 +61,27 @@ The proposed MGSA approach for end-to-end ASR, where the alignment mapping infor
     ```sh
     cd egs/swbd/asr1/
     # download switchboard and assign $swbd1_dir, $eval2000_dir, $rt03_dir in scripts_mltask_linetuningsnbeta.sh
-    swbd1_dir=/home/jtang/data/SWBD/LDC97S62
-    eval2000_dir="/home/jtang/data/SWBD/LDC2002S09/hub5e_00 /home/jtang/data/SWBD/LDC2002T43"
-    rt03_dir=/home/jtang/data/SWBD/LDC2007S10 
+    # swbd1_dir=/home/jtang/data/SWBD/LDC97S62
+    # eval2000_dir="/home/jtang/data/SWBD/LDC2002S09/hub5e_00 /home/jtang/data/SWBD/LDC2002T43"
+    # rt03_dir=/home/jtang/data/SWBD/LDC2007S10 
     sh scripts_mltask_linetuningsnbeta.sh --stage 0
     ```
+- 2. Feature extraction
+    ```sh
+    cd egs/swbd/asr1/
+    sh scripts_mltask_linetuningsnbeta.sh --stage 1 
+    ```
+- 3. Get Subword & Character label
+    ```sh
+    cd egs/swbd/asr1/
+    sh scripts_mltask_linetuningsnbeta.sh --stage 2 # character label
+    sh scripts_mltask_linetuningsnbeta.sh --stage 3 # subword label
+    ```
+- 4. Obtain Multi-granlarity LAS Model 
+    ```sh
+    ```
+
+
 
 ## Citations
 ```
