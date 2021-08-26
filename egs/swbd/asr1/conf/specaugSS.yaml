@@ -1,0 +1,37 @@
+process:
+  # # these three processes are a.k.a. SpecAugument LB (LibriSpeech Basic)
+  # - type: spec_augment
+  #   max_time_warp: 80
+  #   max_freq_width: 27
+  #   n_freq_mask: 1
+  #   max_time_width: 100
+  #   time_p: 1.0
+  #   n_time_mask: 1
+
+  # # these three processes are a.k.a. SpecAugument LD (LibriSpeech Double)
+  # - type: spec_augment
+  #   max_time_warp: 80
+  #   max_freq_width: 27
+  #   n_freq_mask: 2
+  #   max_time_width: 100
+  #   time_p: 1.0
+  #   n_time_mask: 2
+  
+  # # these three processes are a.k.a. SpecAugument SM (Switchboard Mild)
+  # - type: spec_augment
+  #   max_time_warp: 40
+  #   max_freq_width: 15
+  #   n_freq_mask: 2
+  #   max_time_width: 70
+  #   time_p: 0.2
+  #   n_time_mask: 2
+
+  # these three processes are a.k.a. SpecAugument SS (Switchboard Strong)
+  - type: spec_augment
+    max_time_warp: 40
+    max_freq_width: 27
+    n_freq_mask: 2
+    max_time_width: 70
+    time_p: 0.2
+    n_time_mask: 2
+  

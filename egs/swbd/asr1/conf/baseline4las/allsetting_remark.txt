@@ -1,0 +1,11 @@
+[A Comparision of Technoques for Lanfuage Model Integration in Encoder-Decoder Speech Recognition]
+Mark note - "train_rnn_shubham.yaml"
+Encoder - 4x256 BLSTM
+Maxpooling - 2 : 2 : 2
+Decoder - 256 (1 layer)
+BPE
+embsize - 256
+label smoothing / dropout 0.1 / schedule sampling 0.9 / beam size 10
+LM weight - lambda 0.2
+Adam - 0.001
+The SWBD Baseline SWB - (17.1%) / CH - (27.9%) / Full - (21.1%)
