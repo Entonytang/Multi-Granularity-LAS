@@ -1,141 +1,137 @@
 #!/usr/bin/env python3
 
-"""Script to check whether the installation is done correctly."""
-
 # Copyright 2018 Nagoya University (Tomoki Hayashi)
 #  Apache 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
 
+import argparse
 import importlib
-import shutil
+import logging
 import sys
 
-from distutils.version import LooseVersion
 
-module_list = [
-    ("torchaudio", None, None),
-    ("torch_optimizer", None, None),
-    ("warpctc_pytorch", None, "installers/install_warp-ctc.sh"),
-    ("warprnnt_pytorch", None, "installers/install_warp-transducer.sh"),
-    ("chainer_ctc", None, "installers/install_chainer_ctc.sh"),
-    ("pyopenjtalk", None, "installers/install_pyopenjtalk.sh"),
-    ("kenlm", None, "installers/install_kenlm.sh"),
-    ("mmseg", None, "installers/install_py3mmseg.sh"),
-    ("espnet", None, None),
-    ("fairseq", None, "installers/install_fairseq.sh"),
-    ("phonemizer", None, "installers/install_phonemizer.sh"),
-    ("gtn", None, "installers/install_gtn.sh"),
-    ("s3prl", None, "installers/install_s3prl.sh"),
-]
+def main(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-cupy', action='store_true', default=False,
+                        help='Disable CUPY tests')
+    args = parser.parse_args(args)
 
-executable_list = [
-    ("sclite", "installers/install_sctk.sh"),
-    ("sph2pipe", "installers/install_sph2pipe.sh"),
-    ("PESQ", "installers/install_pesq.sh"),
-    ("BeamformIt", "installers/install_beamformit.sh"),
-]
+    # you should add the libraries which are not included in setup.py
+    MANUALLY_INSTALLED_LIBRARIES = [
+        ('espnet', None),
+        ('kaldiio', None),
+        ('matplotlib', None),
+        ('torch', ("0.4.1", "1.0.0", "1.0.1.post2")),
+        ('chainer', ("6.0.0")),
+        ('chainer_ctc', None),
+        ('warpctc_pytorch', ("0.1.1", "0.1.3")),
+        ('warprnnt_pytorch', ("0.1"))
+    ]
 
+    if not args.no_cupy:
+        MANUALLY_INSTALLED_LIBRARIES.append(('cupy', ("6.0.0")))
 
-def main():
-    """Check the installation."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s")
 
-    python_version = sys.version.replace("\n", " ")
-    print(f"[x] python={python_version}")
+    logging.info("python version = " + sys.version)
 
-    print()
-    print("Python modules:")
-    try:
-        import torch
+    library_list = []
+    library_list.extend(MANUALLY_INSTALLED_LIBRARIES)
 
-        print(f"[x] torch={torch.__version__}")
-
-        if torch.cuda.is_available():
-            print(f"[x] torch cuda={torch.version.cuda}")
-        else:
-            print("[ ] torch cuda")
-
-        if torch.backends.cudnn.is_available():
-            print(f"[x] torch cudnn={torch.backends.cudnn.version()}")
-        else:
-            print("[ ] torch cudnn")
-
-        if torch.distributed.is_nccl_available():
-            print("[x] torch nccl")
-        else:
-            print("[ ] torch nccl")
-
-    except ImportError:
-        print("[ ] torch")
-
-    try:
-        import chainer
-
-        print(f"[x] chainer={chainer.__version__}")
-        if LooseVersion(chainer.__version__) != LooseVersion("6.0.0"):
-            print(
-                f"Warning! chainer={chainer.__version__} is not supported. "
-                "Supported version is 6.0.0"
-            )
-
-        if chainer.backends.cuda.available:
-            print("[x] chainer cuda")
-        else:
-            print("[ ] chainer cuda")
-
-        if chainer.backends.cuda.cudnn_enabled:
-            print("[x] chainer cudnn")
-        else:
-            print("[ ] chainer cudnn")
-
-    except ImportError:
-        print("[ ] chainer")
-
-    try:
-        import cupy
-
-        print(f"[x] cupy={cupy.__version__}")
+    # check library availableness
+    logging.info("library availableness check start.")
+    logging.info("# libraries to be checked = %d" % len(library_list))
+    is_correct_installed_list = []
+    for idx, (name, version) in enumerate(library_list):
         try:
-            from cupy.cuda import nccl  # NOQA
-
-            print("[x] cupy nccl")
+            importlib.import_module(name)
+            logging.info("--> %s is installed." % name)
+            is_correct_installed_list.append(True)
         except ImportError:
-            print("[ ] cupy nccl")
-    except ImportError:
-        print("[ ] cupy")
+            logging.warning("--> %s is not installed." % name)
+            is_correct_installed_list.append(False)
+    logging.info("library availableness check done.")
+    logging.info("%d / %d libraries are correctly installed." % (
+        sum(is_correct_installed_list), len(library_list)))
 
-    to_install = []
-    for name, versions, installer in module_list:
-        try:
-            m = importlib.import_module(name)
-            if hasattr(m, "__version__"):
-                version = m.__version__
-                print(f"[x] {name}={version}")
-                if versions is not None and version not in versions:
-                    print(
-                        f"Warning! {name}={version} is not suppoted. "
-                        "Supported versions are {versions}"
-                    )
+    if len(library_list) != sum(is_correct_installed_list):
+        logging.info("please try to setup again and then re-run this script.")
+        sys.exit(1)
+
+    # check library version
+    num_version_specified = sum([True if v is not None else False for n, v in library_list])
+    logging.info("library version check start.")
+    logging.info("# libraries to be checked = %d" % num_version_specified)
+    is_correct_version_list = []
+    for idx, (name, version) in enumerate(library_list):
+        if version is not None:
+            # Note: temp. fix for warprnnt_pytorch
+            # not found version with importlib
+            if name == "warprnnt_pytorch":
+                import pkg_resources
+                vers = pkg_resources.get_distribution(name).version
             else:
-                print(f"[x] {name}")
-        except ImportError:
-            print(f"[ ] {name}")
-            if installer is not None:
-                to_install.append(f"Use '{installer}' to install {name}")
+                vers = importlib.import_module(name).__version__
+            if vers != None:
+                is_correct = vers in version
+                if is_correct:
+                    logging.info("--> %s version is matched." % name)
+                    is_correct_version_list.append(True)
+                else:
+                    logging.warning("--> %s version is not matched (%s is not in %s)." % (
+                        name, vers, str(version)))
+                    is_correct_version_list.append(False)
+            else:
+                logging.info("--> %s has no version info, but version is specified." % name)
+                logging.info("--> maybe it is better to reinstall the latest version.")
+                is_correct_version_list.append(False)
+    logging.info("library version check done.")
+    logging.info("%d / %d libraries are correct version." % (
+        sum(is_correct_version_list), num_version_specified))
 
-    print()
-    print("Executables:")
-    for name, installer in executable_list:
-        if shutil.which(name) is not None:
-            print(f"[x] {name}")
-        else:
-            print(f"[ ] {name}")
-            if installer is not None:
-                to_install.append(f"Use '{installer}' to install {name}")
+    if sum(is_correct_version_list) != num_version_specified:
+        logging.info("please try to setup again and then re-run this script.")
+        sys.exit(1)
 
-    print()
-    print("INFO:")
-    for m in to_install:
-        print(m)
+    # check cuda availableness
+    logging.info("cuda availableness check start.")
+    import chainer
+    import torch
+    try:
+        assert torch.cuda.is_available()
+        logging.info("--> cuda is available in torch.")
+    except AssertionError:
+        logging.warning("--> it seems that cuda is not available in torch.")
+    try:
+        assert torch.backends.cudnn.is_available()
+        logging.info("--> cudnn is available in torch.")
+    except AssertionError:
+        logging.warning("--> it seems that cudnn is not available in torch.")
+    try:
+        assert chainer.backends.cuda.available
+        logging.info("--> cuda is available in chainer.")
+    except AssertionError:
+        logging.warning("--> it seems that cuda is not available in chainer.")
+    try:
+        assert chainer.backends.cuda.cudnn_enabled
+        logging.info("--> cudnn is available in chainer.")
+    except AssertionError:
+        logging.warning("--> it seems that cudnn is not available in chainer.")
+    try:
+        from cupy.cuda import nccl  # NOQA
+        logging.info("--> nccl is installed.")
+    except ImportError:
+        logging.warning("--> it seems that nccl is not installed. multi-gpu is not enabled.")
+        logging.warning("--> if you want to use multi-gpu, please install it and then re-setup.")
+    try:
+        assert torch.cuda.device_count() > 1
+        logging.info("--> multi-gpu is available (#gpus = %d)." % torch.cuda.device_count())
+    except AssertionError:
+        logging.warning("--> it seems that only single gpu is available.")
+        logging.warning('--> maybe your machine has only one gpu.')
+    logging.info("cuda availableness check done.")
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    main(sys.argv[1:])
