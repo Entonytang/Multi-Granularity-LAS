@@ -56,10 +56,16 @@ The proposed MGSA approach for end-to-end ASR, where the alignment mapping infor
     ln -s $KALDI_PATH/egs/wsj/s5/utils .
     ```
    
-
-
-## Prepare the feature (e.g., Switch)
-
+## Run experiments on Switchboard-300hrs
+- 1. Data preparation 
+    ```sh
+    cd egs/swbd/asr1/
+    # download switchboard and assign $swbd1_dir, $eval2000_dir, $rt03_dir in scripts_mltask_linetuningsnbeta.sh
+    swbd1_dir=/home/jtang/data/SWBD/LDC97S62
+    eval2000_dir="/home/jtang/data/SWBD/LDC2002S09/hub5e_00 /home/jtang/data/SWBD/LDC2002T43"
+    rt03_dir=/home/jtang/data/SWBD/LDC2007S10 
+    sh scripts_mltask_linetuningsnbeta.sh --stage 0
+    ```
 
 ## Citations
 ```
