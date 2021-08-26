@@ -166,13 +166,46 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     done
 fi
 
+if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+    dict=${datadir}/lang_1char/${train_set}_units.txt
+    nlsyms=${datadir}/lang_1char/non_lang_syms.txt
+
+    echo "dictionary: ${dict}"
+    ### Task dependent. You have to check non-linguistic symbols used in the corpus.
+    echo "stage 2: character label start"
+    mkdir -p ${datadir}/lang_1char/
+
+    echo "make a non-linguistic symbol list"
+    cut -f 2- ${datadir}/${train_set}/text | tr " " "\n" | sort | uniq | grep "\[" > ${nlsyms}
+    cat ${nlsyms}
+
+    echo "make a dictionary"
+    echo "<unk> 1" > ${dict} # <unk> must be 1, 0 will be used for "blank" in CTC
+    text2token.py -s 1 -n 1 -l ${nlsyms} ${datadir}/${train_set}/text | cut -f 2- -d" " | tr " " "\n" \
+    | sort | uniq | grep -v -e '^\s*$' | awk '{print $0 " " NR+1}' >> ${dict}
+    wc -l ${dict}
+
+    echo "make json files"
+    data2json.sh --feat ${feat_tr_dir}/feats.scp --nlsyms ${nlsyms} \
+         ${datadir}/${train_set} ${dict} > ${feat_tr_dir}/data.json
+    data2json.sh --feat ${feat_dt_dir}/feats.scp --nlsyms ${nlsyms} \
+         ${datadir}/${train_dev} ${dict} > ${feat_dt_dir}/data.json
+    for rtask in ${recog_set}; do
+        feat_recog_dir=${dumpdir}/${rtask}/delta${do_delta}
+        data2json.sh --feat ${feat_recog_dir}/feats.scp --allow-one-column true \
+            --nlsyms ${nlsyms} ${datadir}/${rtask} ${dict} > ${feat_recog_dir}/data.json
+    done
+    echo 'stage 2: character label finished' # finished
+    exit 1;
+fi
+
 dict=data/lang_char/${train_set}_${bpemode}${nbpe}_units.txt
 bpemodel=data/lang_char/${train_set}_${bpemode}${nbpe}
 
 echo "dictionary: ${dict}"
-if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     ### Task dependent. You have to check non-linguistic symbols used in the corpus.
-    echo "stage 2: Dictionary and Json Data Preparation"
+    echo "stage 3: Subword label begin "
     mkdir -p data/lang_char/
     echo "<unk> 1" > ${dict} # <unk> must be 1, 0 will be used for "blank" in CTC
 
@@ -212,6 +245,8 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
         data2json.sh --feat ${feat_recog_dir}/feats.scp --allow-one-column true \
             --bpecode ${bpemodel}.model data/${rtask} ${dict} > ${feat_recog_dir}/data_${bpemode}${nbpe}.json
     done
+    echo 'stage 3: Subword label finished' # finished    
+    exit 1;
 fi
 
 if [ -z ${tag} ]; then
@@ -228,8 +263,8 @@ fi
 expdir=base40exps/${maindir}/${expname}
 mkdir -p ${expdir}
 
-if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
-    echo "stage 3: Network Training(rnn)."
+if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
+    echo "stage 4: Network Training(rnn)."
     train_config="conf/tuning/train_rnn.yaml"
     
     if [[ "${multilabel}" -eq 1 ]]; then
@@ -284,11 +319,11 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         --closebeta_vals ${closebeta_vals} \
         --train-json ${train_json} \
         --valid-json ${valid_json}  &
-    echo "stage 3: This is only send training commands."
+    echo "stage 4: This is only send training commands."
     exit 1;
 fi
 
-if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
+if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     echo "stage 4: Decoding"
     decode_config="conf/tuning/decode_rnn_noctc.yaml"
     export CUDA_VISIBLE_DEVICES=$igpu

@@ -84,8 +84,9 @@ The proposed MGSA approach for end-to-end ASR, where the alignment mapping infor
     ```
 - 4. Obtain Multi-granlarity LAS Model 
     ```sh
+    ## training stage (--stage 4)
     sh scripts_mltask_linetuningsnbeta.sh --ngpu 1 --igpu 0 --batchsize 10 --dec_methods mltaskr_modi3a7c1v3s1 --epochs 25 --model_module MultiAUX3 --multilabel 2 --stage 4 --tag mltaskr_modi3a7c1v3_s5000_vgglstm6x800_rnnlsm010_nocharctc_bpebeta020_entropy_betaval092 --seed 5000 --closethreshold 0.60 --adjust_closectc_weight 1.0 --elayers 6 --eunits 800 --eprojs 800 --dunits 800 --etype vggblstm --dec_njs 3 --decodingdir bpe2char --lsm_weight 0.10 --closebeta_vals 0.92 --mtlbeta 0.20 --testset eval2000 --maindir FAUX3LargerMLN
-    ## change stage=5 for inference stage  
+    ## --stage=5 for inference stage  
     ```
 
 
